@@ -19,10 +19,13 @@ This project involves scraping and analyzing data from the Politics subforum of 
    - Statistical modeling using Ordinary Least Squares (OLS) regression.
 
 ## Folder Structure
-- `notebooks/`: Jupyter notebooks for data analysis and visualization.
-- `scripts/`: Python scripts for web scraping and data cleaning.
-- `data/`: Raw and cleaned datasets.
-- `outputs/`: Graphs and summary tables from the analysis.
+- **`StackExPoliticsSpider.py`**: Core spider logic to scrape questions, user data, and tags from the Politics subforum.
+- **`StackExchangePoliticsSubforumProject.ipynb`**: Notebook containing the complete data analysis workflow, including cleaning, visualization, and statistical modeling.
+- **`items.py`**: Specifies the structure of scraped data fields such as title, tags, and user details.
+- **`middlewares.py`**: Handles middleware for processing requests and responses during web scraping.
+- **`pipelines.py`**: Processes and stores scraped data, ensuring data integrity.
+- **`settings.py`**: Contains configurations such as download delay, concurrent requests, and output format for the Scrapy project.
+
 
 ## Key Insights
 - Questions contribute significantly to user reputation, as shown by regression analysis.
