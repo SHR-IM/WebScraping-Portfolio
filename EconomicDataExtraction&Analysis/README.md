@@ -69,5 +69,8 @@ This project focuses on extracting and analyzing economic data from Wikipedia pa
   - Statistical Modeling: `statsmodels`
 
 ---
-
+## **Future Improvements**
+Extend the dataset to include additional socio-economic indicators.
+Implement advanced statistical or machine learning models.
+Automate regular data scraping to keep the dataset updated.
 
