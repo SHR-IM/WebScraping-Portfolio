@@ -1,7 +1,3 @@
-Here’s the **GitHub-style markdown** for your "Walk the World" project, keeping it consistent with the professional and technical tone used in your other projects.
-
----
-
 # Walk the World: Analyzing Walkable Routes Across Cities
 
 This project explores the possibility of walking between two cities without crossing an ocean and calculates the shortest route in terms of border crossings. It combines web scraping, graph traversal, and data extraction techniques to provide insights into geography and route planning.
@@ -91,6 +87,3 @@ walk_the_world/
 - Integrate economic and demographic analysis for all countries traversed.
 
 ---
-
-Feel free to adjust or expand any section based on additional details or preferences!
-
