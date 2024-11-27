@@ -19,8 +19,8 @@ This project explores the possibility of walking between two cities without cros
 **Programming Language**: Python
 
 **Libraries**:
-- **Web Scraping**: requests, BeautifulSoup, lxml
-- **Graph Traversal**: collections (deque)
+- **Web Scraping**: `requests`, `BeautifulSoup`, `lxml`
+- **Graph Traversal**: `collections` (deque)
 - **Data Extraction**: XPath, CSS selectors
 - **Data Representation**: HTML parsing, Wikipedia infobox data
 
@@ -29,36 +29,31 @@ This project explores the possibility of walking between two cities without cros
 ## Features
 
 ### 1. Input Validation
-- Checks if the given cities exist on Wikipedia using BeautifulSoup.
+- Verifies if the given cities exist on Wikipedia using BeautifulSoup.
 - Returns an error message if no valid Wikipedia page is found.
 
 ### 2. Country and Continent Extraction
 - Extracts the country each city belongs to using CSS selectors and XPath.
-- Verifies if the cities are in the same country or located on different continents.
+- Checks if the cities are in the same country or located on different continents.
 
 ### 3. Ocean Separation
-- Determines whether the cities are separated by an ocean based on continent mappings and a predefined ocean-separation logic.
+- Determines whether the cities are separated by an ocean based on continent mappings and predefined ocean-separation logic.
 
 ### 4. Shortest Route Calculation
-- Uses BFS (Breadth-First Search) to find the route with the minimum number of border crossings.
-- Constructs a graph of countries and their neighboring countries using Wikipedia’s "List of countries and territories by number of land borders."
+- Uses BFS (Breadth-First Search) to calculate the route with the minimum number of border crossings.
+- Constructs a graph of countries and their neighbors using Wikipedia’s "List of countries and territories by number of land borders."
 
 ### 5. Country Information
-- For each country in the calculated route, retrieves:
+- For each country in the route, retrieves:
   - Total area
   - Population
   - GDP per capita
-- Provides comparative insights about the largest, most populous, and richest countries along the route.
+- Identifies the largest, most populous, and richest countries along the route.
 
 ---
 
 ## Folder Structure
-
-```
-walk_the_world/
-├── walk_the_world.ipynb   # Jupyter notebook containing all code and explanations
-├── README.md              # Project overview
-```
+walk_the_world/ ├── walk_the_world.ipynb # Jupyter notebook containing all code and explanations ├── README.md # Project overview
 
 ---
 
