@@ -26,6 +26,23 @@ def normalize_text(parts):
     return " ".join(" ".join(parts).split())
 
 
+def modern_stat_count(card, label):
+    """Read the count associated with a named modern Stack Exchange stat.
+
+    Modern question cards show votes and answers in neighboring stats items.
+    Selecting the first number from the whole card can mislabel votes as answers.
+    """
+    for stat in card.css(".s-post-summary--stats-item"):
+        stat_text = normalize_text(stat.css("::text").getall()).lower()
+        if label not in stat_text:
+            continue
+        number_text = normalize_text(
+            stat.css(".s-post-summary--stats-item-number::text").getall()
+        )
+        return number_from_text(number_text or stat_text)
+    return None
+
+
 class StackExPoliticsSpider(scrapy.Spider):
     name = "stack_exchange_politics"
 
@@ -68,12 +85,18 @@ class StackExPoliticsSpider(scrapy.Spider):
                     "a.s-post-summary--content-title::text"
                 ).getall()
             )
-            votes = normalize_text(
-                card.css(".vote-count-post ::text, .s-post-summary--stats-item-number::text").getall()
+            legacy_votes = normalize_text(
+                card.css(".vote-count-post ::text").getall()
             )
-            answers = normalize_text(
-                card.css(".status strong::text, .s-post-summary--stats-item:has(.s-post-summary--stats-item-number) ::text").getall()
+            legacy_answers = normalize_text(
+                card.css(".status strong::text").getall()
             )
+            votes = number_from_text(legacy_votes)
+            answers = number_from_text(legacy_answers)
+            if votes is None:
+                votes = modern_stat_count(card, "vote")
+            if answers is None:
+                answers = modern_stat_count(card, "answer")
             summary = {
                 "title": title,
                 "question_link": response.urljoin(link),
@@ -83,8 +106,8 @@ class StackExPoliticsSpider(scrapy.Spider):
                     ).getall()
                 ),
                 "tags": card.css(".post-tag::text").getall(),
-                "votes": number_from_text(votes),
-                "answers_count": number_from_text(answers),
+                "votes": votes,
+                "answers_count": answers,
             }
             yield response.follow(
                 link, callback=self.parse_question, cb_kwargs={"summary": summary}
