@@ -1,46 +1,151 @@
+"""Scrapy spider for Stack Exchange Politics question-list snapshots.
+
+This spider can run against an explicitly supplied URL, including a locally
+served historical archive. It does not assume the local archive is available.
+Scraping a live website requires respecting its robots.txt and terms.
+"""
+import re
+from urllib.parse import urlparse
+
 import scrapy
-from scrapy.loader import ItemLoader
-from StackExPolitics.items import StackExPoliticsItem
+
+
+def number_from_text(value):
+    """Parse display counts such as '1,240 votes', '2k', or '3 answers'."""
+    if value is None:
+        return None
+    match = re.search(r"(-?\d[\d,]*(?:\.\d+)?)\s*([kKmM]?)", str(value))
+    if not match:
+        return None
+    amount = float(match.group(1).replace(",", ""))
+    factor = {"": 1, "k": 1_000, "m": 1_000_000}[match.group(2).lower()]
+    return int(amount * factor)
+
+
+def normalize_text(parts):
+    return " ".join(" ".join(parts).split())
+
+
+def modern_stat_count(card, label):
+    """Read the count associated with a named modern Stack Exchange stat.
+
+    Modern question cards show votes and answers in neighboring stats items.
+    Selecting the first number from the whole card can mislabel votes as answers.
+    """
+    for stat in card.css(".s-post-summary--stats-item"):
+        stat_text = normalize_text(stat.css("::text").getall()).lower()
+        if label not in stat_text:
+            continue
+        number_text = normalize_text(
+            stat.css(".s-post-summary--stats-item-number::text").getall()
+        )
+        return number_from_text(number_text or stat_text)
+    return None
+
 
 class StackExPoliticsSpider(scrapy.Spider):
-    name = "StackExPoliticsSpider"
-    allowed_domains = ["127.0.0.1"]
-    start_urls = ["http://127.0.0.1:8080/politics.stackexchange.com_en_all_2023-11/questions"]
+    name = "stack_exchange_politics"
+
+    custom_settings = {
+        "ROBOTSTXT_OBEY": True,
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
+        "DOWNLOAD_DELAY": 1.0,
+        "AUTOTHROTTLE_ENABLED": True,
+        "FEED_EXPORT_ENCODING": "utf-8",
+    }
+
+    def __init__(self, start_url=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not start_url:
+            raise ValueError(
+                "Supply a question listing URL: -a start_url=https://.../questions"
+            )
+        parsed = urlparse(start_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            raise ValueError("start_url must be a full HTTP(S) URL")
+        self.start_urls = [start_url]
+        self.allowed_domains = [parsed.hostname]
 
     def parse(self, response):
-        #Scraping the list of questions on the page
-        questions = response.css("div.question-summary")
-        for question in questions:
-            question_link = question.css('h3 a.question-hyperlink::attr(href)').get()
-            if question_link:
-                yield response.follow(question_link,self.parse_question,meta={'question': question})
+        """Parse modern and legacy question listing markup."""
+        cards = response.css("div.question-summary, div.s-post-summary")
+        for card in cards:
+            link = card.css(
+                "h3 a.question-hyperlink::attr(href), "
+                "h3 a.s-link::attr(href), "
+                "a.s-post-summary--content-title::attr(href)"
+            ).get()
+            if not link:
+                continue
 
-        #Scraping all pages
-        next_page = response.css('a[rel="next"]::attr(href)').get()
+            title = normalize_text(
+                card.css(
+                    "h3 a.question-hyperlink::text, "
+                    "h3 a.s-link::text, "
+                    "a.s-post-summary--content-title::text"
+                ).getall()
+            )
+            legacy_votes = normalize_text(
+                card.css(".vote-count-post ::text").getall()
+            )
+            legacy_answers = normalize_text(
+                card.css(".status strong::text").getall()
+            )
+            votes = number_from_text(legacy_votes)
+            answers = number_from_text(legacy_answers)
+            if votes is None:
+                votes = modern_stat_count(card, "vote")
+            if answers is None:
+                answers = modern_stat_count(card, "answer")
+            summary = {
+                "title": title,
+                "question_link": response.urljoin(link),
+                "excerpt": normalize_text(
+                    card.css(
+                        ".excerpt ::text, .s-post-summary--content-excerpt ::text"
+                    ).getall()
+                ),
+                "tags": card.css(".post-tag::text").getall(),
+                "votes": votes,
+                "answers_count": answers,
+            }
+            yield response.follow(
+                link, callback=self.parse_question, cb_kwargs={"summary": summary}
+            )
+
+        next_page = response.css(
+            'a[rel="next"]::attr(href), a.s-pagination--item[rel="next"]::attr(href)'
+        ).get()
         if next_page:
-            yield response.follow(next_page,self.parse)
+            yield response.follow(next_page, callback=self.parse)
 
-    def parse_question(self, response):
-        question = response.meta['question']
-        loader = ItemLoader(item=StackExPoliticsItem(),selector=question)
-
-        #Scraping fields from the question
-        loader.add_css('title','h3 a.question-hyperlink::text')
-        loader.add_css('question_link','h3 a.question-hyperlink::attr(href)')
-        loader.add_css('excerpt','.excerpt::text')
-        loader.add_css('tags','div.tags a.post-tag::text')
-        loader.add_css('asked_time','.s-user-card--time::attr(datetime)')
-        loader.add_css('user_name','.s-user-card--link::text')
-        loader.add_css('user_profile_link','.s-user-card--avatar::attr(href)')
-        loader.add_css('user_reputation','.s-user-card--rep::text')
-        loader.add_css('user_gold_badges','.s-award-bling__gold::text')
-        loader.add_css('user_silver_badges','.s-award-bling__silver::text')
-        loader.add_css('user_bronze_badges','.s-award-bling__bronze::text')
-        loader.add_css('votes','.vote-count-post strong::text')
-        loader.add_css('answers_count','.status strong::text')
-
-        #Counting comments
-        comments = response.css('.comment.js-comment').getall()
-        loader.add_value('comments_count',len(comments))
-
-        yield loader.load_item()
+    def parse_question(self, response, summary):
+        """Enrich listing data using the linked question detail page."""
+        result = dict(summary)
+        result["comments_count"] = len(
+            response.css(".comment.js-comment, li.comment")
+        )
+        result["asked_time"] = response.css(
+            ".s-user-card--time::attr(datetime), time::attr(datetime)"
+        ).get()
+        result["user_name"] = normalize_text(
+            response.css(
+                ".s-user-card--link::text, .user-details a::text, "
+                ".user-info .user-details a::text"
+            ).getall()[:1]
+        ) or None
+        profile = response.css(
+            ".s-user-card--link::attr(href), "
+            ".user-details a::attr(href)"
+        ).get()
+        result["user_profile_link"] = (
+            response.urljoin(profile) if profile else None
+        )
+        result["user_reputation"] = number_from_text(
+            normalize_text(
+                response.css(
+                    ".s-user-card--rep::text, .reputation-score::text"
+                ).getall()
+            )
+        )
+        yield result
