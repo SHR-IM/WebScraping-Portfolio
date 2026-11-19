@@ -1,37 +1,36 @@
-# StackExchange Analysis Project
+# Stack Exchange Politics: Scraping and Analysis
 
-This project involves scraping and analyzing data from the Politics subforum of StackExchange, a popular Q&A platform. The aim is to extract meaningful insights about user activity, tag usage, and engagement trends using web scraping and data analysis techniques.
+This is a historical academic project exploring question tags, voting, answers, comments, user activity and reputation in a Stack Exchange Politics archive. It combines a **Scrapy spider** with a **pandas/statsmodels notebook** for exploratory analysis and OLS associations.
 
-## Project Overview
-- **Objective**: Scrape and analyze questions, user data, and tag trends from the StackExchange Politics subforum.
-- **Tools and Libraries**: 
-  - Web scraping: `Scrapy`, `BeautifulSoup`
-  - Data manipulation and visualization: `pandas`, `matplotlib`, `seaborn`
-  - Statistical analysis: `statsmodels`
+## Files
 
-## Features
-1. **Web Scraping**:
-   - Scrapes questions, user profiles, and tags from the subforum.
-   - Handles navigation across multiple pages for comprehensive data collection.
-2. **Data Analysis**:
-   - Tag frequency analysis to identify popular topics.
-   - User engagement analysis, including the impact of questions, answers, and comments on reputation.
-   - Statistical modeling using Ordinary Least Squares (OLS) regression.
+- `StackExPoliticsSpider.py` — standalone Scrapy spider. Accepts a question-listing URL at runtime and returns question metadata plus some author details.
+- `StackExchangePoliticsSubforumProject.ipynb` — original coursework notebook for data cleaning, plots and regression. It expects a CSV called `stackexpoliticdata.csv`, which is **not included** in this repository.
 
-## Folder Structure
-- **`StackExPoliticsSpider.py`**: Core spider logic to scrape questions, user data, and tags from the Politics subforum.
-- **`StackExchangePoliticsSubforumProject.ipynb`**: Notebook containing the complete data analysis workflow, including cleaning, visualization, and statistical modeling.
-- **`items.py`**: Specifies the structure of scraped data fields such as title, tags, and user details.
-- **`middlewares.py`**: Handles middleware for processing requests and responses during web scraping.
-- **`pipelines.py`**: Processes and stores scraped data, ensuring data integrity.
-- **`settings.py`**: Contains configurations such as download delay, concurrent requests, and output format for the Scrapy project.
+The unused Scrapy project boilerplate has been removed from the current portfolio version. The standalone spider runs via `scrapy runspider` and does not need a `settings.py`, custom pipeline or item schema module.
 
+## Run the spider
 
-## Key Insights
-- Questions contribute significantly to user reputation, as shown by regression analysis.
-- Tags such as `united-states` and `donald-trump` dominate discussions.
-- Users with high engagement in specific tags tend to have higher reputation scores.
+From the repository root, after installing the dependencies:
 
-## Future Work
-- Expand the analysis to other subforums of StackExchange.
-- Incorporate advanced machine learning techniques for predictive insights.
+```bash
+scrapy runspider StackExchangeAnalysis/StackExPoliticsSpider.py \\
+  -a start_url=http://127.0.0.1:8080/politics.stackexchange.com_en_all_2023-11/questions \\
+  -O stackexchange_questions.json
+```
+
+The original project used a *locally hosted November 2023 archive* at `127.0.0.1:8080`. That archive is **not supplied**, so this command needs a matching locally served snapshot or another permitted, reachable question-listing URL. For a current public site, follow robots.txt and its terms and check whether HTML selectors need updating.
+
+## Tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+These are **offline HTML-fixture tests** of extraction and pagination, not a live crawl or a rerun of the analysis notebook.
+
+## Interpretation
+
+The project demonstrates scraping, text and numeric cleaning, basic aggregation, visualisation and OLS modelling. Any observed relationship between question activity and reputation is an **association, not a causal effect**. Findings in the original notebook are specific to its historical sample and cannot be assumed to generalise to current Stack Exchange activity.
+
+To rerun the notebook, provide `stackexpoliticdata.csv` with the expected fields. The new spider exports JSON with a related but not identical schema, so some data conversion and adaptation may be needed. Do not claim a complete notebook rerun solely from the working spider.
