@@ -35,6 +35,51 @@ class StackExchangeScraperTests(unittest.TestCase):
         self.assertEqual(module.number_from_text("2.5k"), 2500)
         self.assertIsNone(module.number_from_text("no votes"))
 
+    def test_modern_vote_and_answer_counts_are_separate(self):
+        spider = Spider(start_url="https://example.com/questions")
+        listing = html_response(
+            "https://example.com/questions",
+            """<div class="s-post-summary">
+              <h3 class="s-post-summary--content-title">
+                <a class="s-link" href="/questions/9/example">Modern question</a>
+              </h3>
+              <div class="s-post-summary--stats-item">
+                <span class="s-post-summary--stats-item-number">19</span>
+                <span class="s-post-summary--stats-item-unit">votes</span>
+              </div>
+              <div class="s-post-summary--stats-item">
+                <span class="s-post-summary--stats-item-number">2</span>
+                <span class="s-post-summary--stats-item-unit">answers</span>
+              </div>
+            </div>""",
+        )
+        requests = list(spider.parse(listing))
+        self.assertEqual(len(requests), 1)
+        summary = requests[0].cb_kwargs["summary"]
+        self.assertEqual(summary["title"], "Modern question")
+        self.assertEqual(summary["votes"], 19)
+        self.assertEqual(summary["answers_count"], 2)
+
+    def test_modern_zero_answers_and_abbreviated_votes(self):
+        spider = Spider(start_url="https://example.com/questions")
+        listing = html_response(
+            "https://example.com/questions",
+            """<div class="s-post-summary">
+              <h3><a class="s-link" href="/questions/10">Another question</a></h3>
+              <div class="s-post-summary--stats-item">
+                <span class="s-post-summary--stats-item-number">1.2k</span>
+                <span class="s-post-summary--stats-item-unit">votes</span>
+              </div>
+              <div class="s-post-summary--stats-item">
+                <span class="s-post-summary--stats-item-number">0</span>
+                <span class="s-post-summary--stats-item-unit">answers</span>
+              </div>
+            </div>""",
+        )
+        summary = list(spider.parse(listing))[0].cb_kwargs["summary"]
+        self.assertEqual(summary["votes"], 1200)
+        self.assertEqual(summary["answers_count"], 0)
+
     def test_listing_and_detail(self):
         spider = Spider(start_url="https://example.com/questions")
         listing = html_response(
