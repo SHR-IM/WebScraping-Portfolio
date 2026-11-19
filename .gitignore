@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.env
+.DS_Store
+countries_data.csv
+stackexpoliticdata.csv
+stackexchange_questions.json
