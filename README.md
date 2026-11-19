@@ -20,7 +20,7 @@ Use Python 3.11 or newer:
     source .venv/bin/activate
     python -m pip install -r requirements.txt
 
-On Windows, activate using \`.venv\Scripts\activate\`.
+On Windows, activate using `.venv\Scripts\activate`.
 
 Notebooks can be opened with Jupyter. Their data acquisition code requires network access, and their HTML selectors were developed against historical page structures; current Wikipedia/StackExchange HTML may differ. No external web calls are made when running the offline test suite.
 
@@ -40,15 +40,15 @@ The spider exports question title, URL, excerpt, tags, vote and answer counts, c
 
 ### Reproducing the notebooks
 
-- \`EconomicDataExtraction&Analysis/EconomicDataExtraction.ipynb\` generates \`countries_data.csv\` from Wikipedia; collecting this dataset requires internet access and the notebook's historical selectors may need adjustments.
-- \`StackExchangeAnalysis/StackExchangePoliticsSubforumProject.ipynb\` references \`stackexpoliticdata.csv\`. **That dataset is not committed**; provide or regenerate a compatible export before running the analysis cells. Scraped schemas may need mapping before using new exports in that older notebook.
-- \`WalkTheWorld/WalktheWorld.ipynb\` builds an adjacency graph from a Wikipedia article and applies BFS. This does **not** validate real-world pedestrian travel, visas, ferry connections, or current border accessibility.
+- `EconomicDataExtraction&Analysis/EconomicDataExtraction.ipynb` generates `countries_data.csv` from Wikipedia; collecting this dataset requires internet access and the notebook's historical selectors may need adjustments.
+- `StackExchangeAnalysis/StackExchangePoliticsSubforumProject.ipynb` references `stackexpoliticdata.csv`. **That dataset is not committed**; provide or regenerate a compatible export before running the analysis cells. Scraped schemas may need mapping before using new exports in that older notebook.
+- `WalkTheWorld/WalktheWorld.ipynb` builds an adjacency graph from a Wikipedia article and applies BFS. This does **not** validate real-world pedestrian travel, visas, ferry connections, or current border accessibility.
 
 ## Verification
 
     python -m unittest discover -s tests -v
 
-Offline unit tests use synthetic HTML fixtures and cover spider initialization, pagination, question extraction and parsing. These tests do not verify current live-site compatibility or reproduce every analysis result.
+Offline unit tests use synthetic HTML fixtures and cover spider initialization, pagination, legacy and modern question extraction, vote/answer counts and detail parsing. These tests do not verify current live-site compatibility or reproduce every analysis result.
 
 ## Interpretation and limitations
 
